@@ -32,8 +32,18 @@ chmod -R a+rX "$APP_DIR"; chmod o+x "$(dirname "$APP_DIR")"
 # Caddy precisa atravessar /root (já está 711 neste servidor; garante sem abrir leitura)
 chmod o+x /root /root/apps
 
+# O Caddy roda como outro usuário: cria o log com o mesmo dono/modo dos logs existentes
+LOG="/var/log/caddy/${DOMAIN//./-}-access.log"
+mkdir -p /var/log/caddy
+REF="$(ls -t /var/log/caddy/*-access.log 2>/dev/null | grep -v "$LOG" | head -1 || true)"
+[ -f "$LOG" ] || touch "$LOG"
+if [ -n "$REF" ]; then chown --reference="$REF" "$LOG"; chmod --reference="$REF" "$LOG"
+else chown "$(stat -c %U:%G /var/log/caddy)" "$LOG"; chmod 644 "$LOG"; fi
+
 if grep -qE "^${DOMAIN//./\\.}[[:space:]]*\{" "$CADDYFILE" "${CADDYFILE%/*}"/sites-enabled/* 2>/dev/null; then
-  echo "==> $DOMAIN já existe no Caddy; só os arquivos foram atualizados."
+  echo "==> $DOMAIN já está no Caddyfile; validando e recarregando"
+  caddy_validate || { echo "ERRO de validação:"; grep -i error /tmp/caddy-validate.log | tail -3; exit 1; }
+  systemctl reload caddy || { journalctl -u caddy -n 6 --no-pager | grep -vi token; exit 1; }
 else
   if ! caddy_validate; then
     echo "ERRO: o Caddyfile ATUAL já não valida (antes de qualquer mudança). Nada foi alterado."
@@ -48,7 +58,7 @@ else
 
 $DOMAIN {
 	log {
-		output file /var/log/caddy/${DOMAIN//./-}-access.log
+		output file $LOG
 	}
 	encode gzip
 	root * $APP_DIR
