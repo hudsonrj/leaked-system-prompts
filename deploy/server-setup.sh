@@ -59,7 +59,12 @@ CADDY
     echo "ERRO na validação; restaurando o Caddyfile anterior."; cat /tmp/caddy-validate.log | tail -20
     cp -a "${CADDYFILE%/*}/Caddyfile.before-$APP-$TS" "$CADDYFILE"; exit 1
   fi
-  systemctl reload caddy
+  if ! systemctl reload caddy; then
+    echo "ERRO no reload; restaurando o Caddyfile anterior (o Caddy segue com a configuração antiga)."
+    cp -a "${CADDYFILE%/*}/Caddyfile.before-$APP-$TS" "$CADDYFILE"
+    journalctl -u caddy -n 15 --no-pager | grep -vi token | tail -15
+    exit 1
+  fi
 fi
 
 echo "==> Testando (o certificado pode levar alguns segundos na primeira vez)"
