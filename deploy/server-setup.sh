@@ -25,6 +25,13 @@ chmod o+x /root /root/apps
 if grep -qE "^${DOMAIN//./\\.}[[:space:]]*\{" "$CADDYFILE" "${CADDYFILE%/*}"/sites-enabled/* 2>/dev/null; then
   echo "==> $DOMAIN já existe no Caddy; só os arquivos foram atualizados."
 else
+  if ! caddy validate --config "$CADDYFILE" --adapter caddyfile >/tmp/caddy-validate.log 2>&1; then
+    echo "ERRO: o Caddyfile ATUAL já não valida (antes de qualquer mudança). Nada foi alterado."
+    grep -i error /tmp/caddy-validate.log | tail -3
+    L=$(grep -oE 'Caddyfile:[0-9]+' /tmp/caddy-validate.log | tail -1 | cut -d: -f2)
+    [ -n "$L" ] && { echo "--- trecho ao redor da linha $L:"; sed -n "$((L-8)),$((L+3))p" "$CADDYFILE" | cat -n; }
+    exit 1
+  fi
   echo "==> Adicionando $DOMAIN ao Caddyfile (backup: Caddyfile.before-$APP-$TS)"
   cp -a "$CADDYFILE" "${CADDYFILE%/*}/Caddyfile.before-$APP-$TS"
   cat >> "$CADDYFILE" <<CADDY
@@ -35,12 +42,6 @@ $DOMAIN {
 	}
 	encode gzip
 	root * $APP_DIR
-	header {
-		X-Content-Type-Options nosniff
-		Referrer-Policy strict-origin-when-cross-origin
-	}
-	@assets path *.js *.css
-	header @assets Cache-Control "public, max-age=3600"
 	file_server
 }
 CADDY
