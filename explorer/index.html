@@ -26,6 +26,7 @@
       <a href="#linha-do-tempo" data-view="linha-do-tempo">Linha do tempo</a>
       <a href="#comparar" data-view="comparar">Comparar</a>
       <a href="#tecnicas" data-view="tecnicas">Técnicas</a>
+      <a href="#estudio" data-view="estudio" class="nav-hot">Estúdio IA</a>
       <a href="#laboratorio" data-view="laboratorio">Laboratório</a>
       <a href="#aprender" data-view="aprender">Trilha</a>
       <a href="#como-usar" data-view="como-usar">Como usar</a>
@@ -48,7 +49,7 @@
       <div class="hero-cta">
         <a class="btn primary" href="#anatomia">Ver a anatomia animada</a>
         <a class="btn" href="#explorar">Explorar o acervo</a>
-        <a class="btn ghost" href="#laboratorio">Testar meu prompt</a>
+        <a class="btn ghost" href="#estudio">Criar meu prompt com IA</a>
       </div>
     </div>
     <div class="xray" aria-label="Trechos reais de system prompts sendo revelados">
@@ -226,6 +227,74 @@
   </div>
   <div class="tech-grid" id="techGrid"></div>
   <div class="tech-detail" id="techDetail"></div>
+</section>
+
+
+<!-- ============ ESTÚDIO IA ============ -->
+<section class="view" id="v-estudio" data-view="estudio" hidden>
+  <div class="view-head">
+    <p class="eyebrow">Estúdio IA</p>
+    <h2>Monte o seu prompt com partes das melhores IAs</h2>
+    <p>Escolha cada atributo e de qual empresa ou modelo ele vem. O sistema extrai a seção real de cada prompt e a IA junta tudo num prompt único, adaptado ao seu produto. Depois, continue ajustando na conversa.</p>
+  </div>
+
+  <div class="st-config">
+    <label class="fld"><span>Seu produto ou assistente</span><input id="stProduct" placeholder="ex.: Lia, atendente da Loja Aurora"></label>
+    <label class="fld st-goal"><span>Objetivo e público</span><input id="stGoal" placeholder="ex.: tirar dúvidas de pedidos e trocas, clientes pelo celular"></label>
+    <label class="fld"><span>Modelo que vai usar o prompt</span>
+      <select id="stTarget"><option value="generico">Qualquer modelo</option><option value="claude">Claude</option><option value="gpt">GPT</option><option value="gemini">Gemini</option><option value="deepseek">DeepSeek</option><option value="local">Modelo local (Llama, Qwen…)</option></select></label>
+    <label class="fld" id="stCodeWrap" hidden><span>Código de acesso</span><input id="stCode" type="password" autocomplete="off"></label>
+    <div class="st-status" id="stStatus"><i></i><span>Verificando a IA…</span></div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab on" type="button" role="tab" aria-selected="true" data-stab="mixer">Montar por atributos</button>
+    <button class="tab" type="button" role="tab" aria-selected="false" data-stab="chat">Conversar com a IA</button>
+  </div>
+
+  <div class="studio">
+    <div class="st-left">
+      <div data-spane="mixer">
+        <div class="dna" id="dna" aria-label="Composição do seu prompt">
+          <div class="dna-head"><span class="dna-k">DNA do seu prompt</span><span class="dna-v" id="dnaVendors"></span></div>
+          <div class="dna-bar" id="dnaBar"></div>
+          <div class="dna-foot" id="dnaFoot"></div>
+        </div>
+        <div class="st-presets"><span class="muted">Começar de um modelo pronto:</span><div class="chips" id="mixPresets"></div></div>
+        <ol class="mix-layers" id="mixLayers"></ol>
+        <div class="st-actions">
+          <button class="btn primary" type="button" id="mixGen">Gerar prompt com IA</button>
+          <button class="btn" type="button" id="mixRaw">Juntar trechos sem IA</button>
+          <span class="muted" id="mixInfo"></span>
+        </div>
+      </div>
+      <div data-spane="chat" hidden>
+        <div class="fld"><span>O que você quer fazer</span><div class="chips" id="chatModes"></div></div>
+        <p class="muted" id="chatModeHelp"></p>
+        <div class="fld"><span>Prompts de referência (até 4)</span>
+          <input id="refQ" type="search" placeholder="Buscar: Claude Code, Codex, Perplexity…">
+          <div class="ref-results" id="refResults"></div>
+        </div>
+        <div class="ref-sel" id="refSel"></div>
+        <button class="btn small ghost" type="button" id="refSuggest">Sugerir referências para este modo</button>
+      </div>
+    </div>
+
+    <div class="st-chat">
+      <div class="st-chat-head"><b>Conversa</b><span class="muted" id="chatMeta"></span>
+        <button class="btn small ghost" type="button" id="chatNew">Nova conversa</button></div>
+      <div class="msgs" id="msgs" aria-live="polite"></div>
+      <div class="st-out-actions" id="outActions" hidden>
+        <button class="btn small" type="button" id="outCopy">Copiar prompt</button>
+        <button class="btn small ghost" type="button" id="outLab">Analisar no laboratório</button>
+        <button class="btn small ghost" type="button" id="outDl">Baixar .md</button>
+      </div>
+      <form class="composer" id="composer">
+        <textarea id="chatIn" rows="3" placeholder="Descreva o que precisa, cole um prompt para melhorar ou peça ajustes…"></textarea>
+        <button class="btn primary" type="submit" id="chatSend">Enviar</button>
+      </form>
+    </div>
+  </div>
 </section>
 
 <!-- ============ LABORATÓRIO ============ -->

@@ -15,6 +15,7 @@ Abra `explorer/index.html` no navegador. Não precisa de servidor nem de instala
 | **Linha do tempo** | Corrida animada de prompts acumulados por empresa, histograma mensal e evolução de tamanho dentro de uma família de modelos |
 | **Comparar** | Dois prompts lado a lado: radar sobreposto, tabela de métricas e títulos exclusivos ou em comum |
 | **Técnicas** | 12 padrões detectados, com explicação, faça/evite, exemplos reais de várias empresas e prompts para estudar |
+| **Estúdio IA** | Monte um prompt por atributos escolhendo de qual empresa/modelo vem cada camada (DNA do prompt), e converse com a IA para criar, melhorar, personalizar ou montar agentes de código seguros (system prompt, CLAUDE.md/AGENTS.md, permissões e checklist) |
 | **Laboratório** | Analisa o seu prompt localmente (nota de cobertura, radar, sugestões) e gera um prompt estruturado a partir de um formulário |
 | **Trilha** | 8 etapas de aprendizado com leituras e exercícios, progresso salvo no navegador |
 | **Como usar** | Guia, leitura das métricas, lições práticas e segurança |
@@ -41,3 +42,15 @@ O texto completo de cada prompt é buscado do GitHub sob demanda.
 - **Datas**: nome do arquivo ou commit que adicionou o arquivo ao repositório.
 
 A detecção é heurística: mostra tendências, não substitui a leitura.
+
+## Estúdio IA (backend)
+
+A IA roda no servidor (`server/assistant.py`, só biblioteca padrão do Python). A chave fica em `.env` na raiz do repositório
+(`DEEP_SEEK=...`), nunca no navegador nem no git. Limite de pedidos por IP e código de acesso opcional (`ACCESS_CODE=`).
+Funciona com qualquer API compatível com OpenAI (`LLM_BASE_URL`, `LLM_MODEL`).
+
+Atualizar no servidor:
+
+```bash
+cd /root/apps/secretsaiprompts && git pull && bash deploy/update.sh
+```

@@ -132,7 +132,7 @@ const redrawers = [];
 function redrawCharts() { redrawers.forEach(f => f()); }
 
 /* ---------- roteador ---------- */
-const VIEWS = ['inicio', 'anatomia', 'explorar', 'linha-do-tempo', 'comparar', 'tecnicas', 'laboratorio', 'aprender', 'como-usar'];
+const VIEWS = ['inicio', 'anatomia', 'explorar', 'linha-do-tempo', 'comparar', 'tecnicas', 'estudio', 'laboratorio', 'aprender', 'como-usar'];
 const inits = {}, shown = {};
 function route() {
   const h = location.hash.slice(1);
@@ -780,6 +780,274 @@ inits['como-usar'] = () => {
   $('#srcList').innerHTML = C.sources.map(s => { const [repo] = (s.repo || '').split('@'); return `<li><b>${s.id === 'local' ? 'Este repositório' : esc(repo)}</b>: ${fmt(cnt(s.id))} arquivos. ${repo ? `<a href="https://github.com/${repo}" target="_blank" rel="noopener">github.com/${esc(repo)}</a>` : ''}</li>`; }).join('');
   $('#genAt').textContent = 'Catálogo gerado em ' + new Date(C.generated).toLocaleString('pt-BR') + '.';
 };
+
+/* ================= ESTÚDIO IA ================= */
+const API = location.protocol.startsWith('http') ? '/api' : null;
+const HEADKW = {
+  identidade: /identity|about|who you are|persona|product.?information|behavior|role|overview|introduction/i,
+  contexto: /date|context|cutoff|knowledge|environment|location|current/i,
+  tom: /tone|style|personality|voice|sycophan|warmth|character/i,
+  formatacao: /format|markdown|list|bullet|length|response style|output/i,
+  ferramentas: /tool|function|available|capabilit/i,
+  busca: /search|citation|cite|source|web|browse/i,
+  memoria: /memor|personaliz|preference|user context/i,
+  raciocinio: /think|reason|plan|workflow|approach|process|task management/i,
+  seguranca: /safety|refus|harm|copyright|security|policy|wellbeing|child|guardrail|sensitive/i,
+  exemplos: /example/i,
+  agente: /git|commit|file|terminal|sandbox|permission|test|code|edit|shell|destructive/i,
+};
+function splitSections(text) {
+  const lines = text.split('\n'), secs = [];
+  let cur = { head: '(início)', lines: [] };
+  const isHead = l => /^#{1,4}\s+\S/.test(l) || /^\s*<([a-zA-Z_][\w-]{1,40})(\s[^>]*)?>\s*$/.test(l);
+  for (const l of lines) {
+    if (isHead(l) && cur.lines.join('\n').trim().length > 80) { secs.push(cur); cur = { head: l.replace(/^#+\s*|[<>]/g, '').trim(), lines: [l] }; }
+    else { if (isHead(l) && !cur.lines.length) cur.head = l.replace(/^#+\s*|[<>]/g, '').trim(); cur.lines.push(l); }
+  }
+  secs.push(cur);
+  const out = [];
+  secs.forEach((s, i) => { const t = s.lines.join('\n').trim(); if (!t) return;
+    if (t.length > 6000) { for (let p = 0; p < t.length; p += 4000) out.push({ i, head: s.head, text: t.slice(p, p + 4000) }); }
+    else out.push({ i, head: s.head, text: t }); });
+  return out;
+}
+function extractFor(text, techs, budget) {
+  const secs = splitSections(text);
+  secs.forEach((s, idx) => {
+    s.idx = idx;
+    s.score = techs.reduce((a, k) => {
+      const hits = (s.text.match(new RegExp(RX_EN_ONLY[k].source, RX_EN_ONLY[k].flags)) || []).length;
+      return a + hits / Math.sqrt(Math.max(400, s.text.length)) * 10 + (HEADKW[k] && HEADKW[k].test(s.head) ? 6 : 0);
+    }, 0);
+  });
+  const pick = [...secs].sort((a, b) => b.score - a.score).filter(s => s.score > 0.2);
+  const chosen = []; let used = 0;
+  for (const s of pick) { if (used >= budget) break; const t = s.text.slice(0, budget - used); chosen.push({ ...s, text: t }); used += t.length; }
+  if (!chosen.length) chosen.push({ idx: 0, text: text.slice(0, budget) });
+  return chosen.sort((a, b) => a.idx - b.idx).map(s => s.text).join('\n\n[…]\n\n');
+}
+
+const MIX = [
+  { k: 'identidade', t: 'Identidade e objetivo' }, { k: 'contexto', t: 'Contexto dinâmico' },
+  { k: 'tom', t: 'Tom e personalidade' }, { k: 'formatacao', t: 'Formatação' },
+  { k: 'ferramentas', t: 'Ferramentas' }, { k: 'busca', t: 'Busca e citações' },
+  { k: 'memoria', t: 'Memória' }, { k: 'raciocinio', t: 'Raciocínio e processo' },
+  { k: 'seguranca', t: 'Segurança e limites' }, { k: 'agente', t: 'Ações de agente (código)' },
+  { k: 'exemplos', t: 'Exemplos' },
+];
+const PRESETS = {
+  'Atendimento ao cliente': { identidade: /ChatGPT 5\.5 Instant/i, contexto: /Claude Opus 5\.5 system/i, tom: /personality instructions/i, formatacao: /Claude Sonnet 5\.5 system/i, memoria: /advanced memory/i, seguranca: /Claude Fable 5\.2 system/i, exemplos: /Gemini 3\.5 Flash/i },
+  'Agente de código seguro': { identidade: /Claude Code system prompt \(Fable 5\.2\)/i, contexto: /Gemini CLI|gemini-cli/i, tom: /GPT-6\.2-Sol Codex/i, formatacao: /Cursor/i, ferramentas: /Claude Code system prompt \(Opus 5\.5\)/i, raciocinio: /Plan mode/i, seguranca: /Auto-review/i, agente: /GPT-6\.2-Sol Codex/i, exemplos: /Cursor/i },
+  'Pesquisa com fontes': { identidade: /Perplexity/i, contexto: /Grok 4\.7/i, tom: /Grok 4\.7/i, formatacao: /Perplexity/i, ferramentas: /Web search/i, busca: /Perplexity/i, raciocinio: /research/i, seguranca: /Claude Opus 5\.5 system/i, exemplos: /Gemini 3\.5 Flash/i },
+  'Tutor / educação': { identidade: /guided learning|Study and learn/i, tom: /Nerdy|Listener/i, formatacao: /Claude Sonnet 5\.5 system/i, raciocinio: /guided learning|Study and learn/i, seguranca: /Claude Fable 5\.2 system/i, exemplos: /Gemini 3\.5 Flash/i, contexto: /ChatGPT 5\.5 Instant/i },
+};
+const pool = bigFeat.filter(i => i.chars > 2500);
+const candFor = k => [...pool].sort((a, b) => b.dens[k] - a.dens[k]).slice(0, 45);
+let mixState = store.get('mix', null);
+function defaultMix(presetName) {
+  const p = PRESETS[presetName] || {};
+  const st = {};
+  MIX.forEach(({ k }) => {
+    const re = p[k]; const hit = re ? feat.find(i => re.test(i.title) && i.chars > 1500) : null;
+    st[k] = { on: !!hit || (!presetName && ['identidade', 'tom', 'formatacao', 'seguranca', 'exemplos'].includes(k)), id: (hit || candFor(k)[0]).id };
+  });
+  return st;
+}
+const exCache = new Map();
+async function layerExcerpt(k, id, budget = 3500) {
+  const key = k + ':' + id + ':' + budget;
+  if (exCache.has(key)) return exCache.get(key);
+  const it = byId.get(id);
+  let txt; try { txt = await fetchText(it); } catch { txt = it.excerpt; }
+  const ex = extractFor(txt, [k], budget); exCache.set(key, ex); return ex;
+}
+let chat = store.get('chat', []), chatMode = store.get('chatMode', 'criar'), chatRefs = store.get('chatRefs', []), busy = false;
+const MODES_UI = {
+  criar: ['Criar do zero', 'Descreva o assistente. A IA faz até 3 perguntas e entrega o prompt completo.'],
+  melhorar: ['Melhorar meu prompt', 'Cole o seu prompt na conversa. A IA diagnostica e entrega a versão melhorada.'],
+  personalizar: ['Personalizar prompt de empresa', 'Escolha referências e diga sua marca, tom e regras. A IA adapta a arquitetura para você.'],
+  agente: ['Agente de código seguro', 'Gera system prompt do agente, regras do projeto (CLAUDE.md/AGENTS.md), permissões e checklist de segurança.'],
+};
+const REF_SUGGEST = {
+  criar: [/Claude Sonnet 5\.5 system/i, /ChatGPT 5\.5 Instant/i],
+  melhorar: [/Claude Opus 5\.5 system/i, /GPT-5\.5 API/i],
+  personalizar: [/personality instructions/i, /Claude Fable 5\.2 system/i],
+  agente: [/Claude Code system prompt \(Fable 5\.2\)/i, /GPT-6\.2-Sol Codex/i, /Auto-review/i, /Cursor/i],
+};
+const REF_TECHS = { criar: ['identidade', 'tom', 'formatacao', 'seguranca'], melhorar: ['identidade', 'tom', 'formatacao', 'seguranca', 'exemplos'], personalizar: ['identidade', 'tom', 'formatacao', 'ferramentas', 'seguranca'], agente: ['agente', 'seguranca', 'ferramentas', 'raciocinio'] };
+let health = null;
+
+inits.estudio = () => {
+  ['stProduct', 'stGoal', 'stTarget'].forEach(id => { const el = $('#' + id); el.value = store.get(id, el.value); el.addEventListener('change', () => store.set(id, el.value)); });
+  $('#stCode').value = store.get('stCode', ''); $('#stCode').addEventListener('change', e => store.set('stCode', e.target.value));
+  $$('[data-stab]').forEach(b => b.onclick = () => {
+    $$('[data-stab]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', x === b); });
+    $$('[data-spane]').forEach(p => p.hidden = p.dataset.spane !== b.dataset.stab);
+  });
+  // mixer
+  if (!mixState) mixState = defaultMix('Atendimento ao cliente');
+  $('#mixPresets').innerHTML = Object.keys(PRESETS).map(n => `<button class="chip" type="button" data-preset="${esc(n)}">${esc(n)}</button>`).join('');
+  $('#mixPresets').onclick = e => { const c = e.target.closest('[data-preset]'); if (!c) return; mixState = defaultMix(c.dataset.preset); store.set('mix', mixState); drawMix(); toast('Modelo “' + c.dataset.preset + '” aplicado'); };
+  drawMix();
+  $('#mixRaw').onclick = mixRaw;
+  $('#mixGen').onclick = mixGenerate;
+  // chat
+  $('#chatModes').innerHTML = Object.entries(MODES_UI).map(([k, [n]]) => `<button class="chip" type="button" data-mode="${k}">${esc(n)}</button>`).join('');
+  $('#chatModes').onclick = e => { const c = e.target.closest('[data-mode]'); if (c) { chatMode = c.dataset.mode; store.set('chatMode', chatMode); drawModes(); } };
+  drawModes(); drawRefs();
+  let qt; $('#refQ').addEventListener('input', e => { clearTimeout(qt); qt = setTimeout(() => refSearch(e.target.value), 120); });
+  $('#refResults').onclick = e => { const b = e.target.closest('[data-add]'); if (!b) return; if (chatRefs.length >= 4) { toast('Máximo de 4 referências'); return; } if (!chatRefs.includes(b.dataset.add)) chatRefs.push(b.dataset.add); store.set('chatRefs', chatRefs); drawRefs(); };
+  $('#refSel').onclick = e => { const b = e.target.closest('[data-rm]'); if (!b) return; chatRefs = chatRefs.filter(x => x !== b.dataset.rm); store.set('chatRefs', chatRefs); drawRefs(); };
+  $('#refSuggest').onclick = () => { chatRefs = (REF_SUGGEST[chatMode] || []).map(r => feat.find(i => r.test(i.title))).filter(Boolean).map(i => i.id).slice(0, 4); store.set('chatRefs', chatRefs); drawRefs(); };
+  $('#composer').addEventListener('submit', e => { e.preventDefault(); const t = $('#chatIn').value.trim(); if (!t) return; $('#chatIn').value = ''; send(t, chatMode, chatRefsPayload); });
+  $('#chatIn').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) $('#composer').requestSubmit(); });
+  $('#chatNew').onclick = () => { chat = []; store.set('chat', chat); drawChat(); };
+  $('#outCopy').onclick = async () => { const p = lastPrompt(); try { await navigator.clipboard.writeText(p); toast('Prompt copiado'); } catch { toast('Não consegui copiar. Selecione o texto na conversa.'); } };
+  $('#outLab').onclick = () => { const p = lastPrompt(); location.hash = 'laboratorio'; setTimeout(() => { $('#labText').value = p; labRun(); }, 60); };
+  $('#outDl').onclick = () => { const blob = new Blob([lastPrompt()], { type: 'text/markdown' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (($('#stProduct').value || 'meu-prompt').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'meu-prompt') + '.md'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
+  drawChat(); checkHealth();
+};
+async function checkHealth() {
+  const st = $('#stStatus');
+  if (!API) { st.className = 'st-status off'; st.querySelector('span').textContent = 'IA disponível só no site publicado'; return; }
+  try {
+    const r = await fetch(API + '/health'); health = await r.json();
+    st.className = 'st-status ' + (health.ok ? 'ok' : 'off');
+    st.querySelector('span').textContent = health.ok ? `IA online · ${health.model}` : 'Servidor sem chave de API';
+    $('#stCodeWrap').hidden = !health.access_required;
+    $('#chatMeta').textContent = health.ok ? `limite: ${health.rate_per_hour} pedidos/hora` : '';
+  } catch { st.className = 'st-status off'; st.querySelector('span').textContent = 'IA fora do ar'; }
+}
+function drawMix() {
+  $('#mixLayers').innerHTML = MIX.map(({ k, t }) => {
+    const s = mixState[k] || { on: false, id: candFor(k)[0].id };
+    let c = candFor(k); if (!c.find(i => i.id === s.id) && byId.get(s.id)) c = [byId.get(s.id), ...c];
+    return `<li class="ml ${s.on ? '' : 'off'}" data-k="${k}" style="--c:${tcol(k)}">
+      <div class="ml-row"><input type="checkbox" ${s.on ? 'checked' : ''} aria-label="Incluir ${esc(t)}" data-on>
+        <b>${esc(t)}<small>${esc(T[k].n)}</small></b>
+        <select data-src aria-label="Fonte de ${esc(t)}">${c.map((i, n) => `<option value="${i.id}" ${i.id === s.id ? 'selected' : ''}>${n < 3 ? '★ ' : ''}${esc(i.vendor)} · ${esc(displayTitle(i))}</option>`).join('')}</select>
+        <button class="btn small ghost" type="button" data-prev>Ver trecho</button></div>
+      <pre class="ml-prev" hidden></pre></li>`;
+  }).join('');
+  drawDna();
+  const on = MIX.filter(({ k }) => mixState[k]?.on).length;
+  $('#mixInfo').textContent = `${on} atributo${on === 1 ? '' : 's'} · ${new Set(MIX.filter(({ k }) => mixState[k]?.on).map(({ k }) => byId.get(mixState[k].id)?.vendor)).size} empresa(s)`;
+  $('#mixLayers').onchange = e => { const li = e.target.closest('.ml'); if (!li) return; const k = li.dataset.k;
+    if (e.target.matches('[data-on]')) mixState[k].on = e.target.checked;
+    if (e.target.matches('[data-src]')) { mixState[k].id = e.target.value; mixState[k].on = true; }
+    store.set('mix', mixState); drawMix(); };
+  $('#mixLayers').onclick = async e => { const b = e.target.closest('[data-prev]'); if (!b) return; const li = b.closest('.ml'), pre = $('.ml-prev', li), k = li.dataset.k;
+    if (!pre.hidden) { pre.hidden = true; b.textContent = 'Ver trecho'; return; }
+    pre.hidden = false; pre.textContent = 'Extraindo a seção…'; b.textContent = 'Fechar';
+    pre.innerHTML = highlight(await layerExcerpt(k, mixState[k].id)); };
+}
+function drawDna() {
+  const sel = MIX.filter(({ k }) => mixState[k]?.on);
+  const bar = $('#dnaBar');
+  const prev = new Map($$('.dna-seg', bar).map(e => [e.dataset.k, e]));
+  bar.innerHTML = '';
+  MIX.forEach(({ k, t }) => {
+    const on = !!mixState[k]?.on, it = byId.get(mixState[k]?.id);
+    const seg = prev.get(k) || Object.assign(document.createElement('div'), { className: 'dna-seg' });
+    seg.dataset.k = k; seg.style.setProperty('--c', tcol(k)); seg.style.setProperty('--v', it ? vcol(it.vendor) : 'transparent');
+    seg.style.flexGrow = on ? 1 : 0.0001; seg.classList.toggle('off', !on);
+    seg.title = on && it ? `${t}: ${it.vendor} · ${it.title}` : t;
+    seg.innerHTML = on && it ? `<b>${esc(t.split(' ')[0])}</b><span>${esc(it.vendor)}</span>` : '';
+    bar.appendChild(seg);
+  });
+  const vc = {}; sel.forEach(({ k }) => { const v = byId.get(mixState[k].id)?.vendor; if (v) vc[v] = (vc[v] || 0) + 1; });
+  $('#dnaVendors').innerHTML = Object.entries(vc).sort((a, b) => b[1] - a[1]).map(([v, n]) => `<span><i style="background:${vcol(v)}"></i>${esc(v)} ${Math.round(n / sel.length * 100)}%</span>`).join('');
+  const est = 400 + sel.length * 380, nv = Object.keys(vc).length;
+  $('#dnaFoot').textContent = sel.length ? `${sel.length} camadas de ${nv} empresa${nv > 1 ? 's' : ''} · prompt final estimado em ~${fmtK(est)} tokens` : 'Marque os atributos abaixo para compor o seu prompt';
+}
+function mixLabel() { return MIX.filter(({ k }) => mixState[k]?.on).map(({ k, t }) => { const i = byId.get(mixState[k].id); return `- ${t}: ${i.vendor} · ${displayTitle(i)}`; }).join('\n'); }
+async function mixRefs() {
+  const sel = MIX.filter(({ k }) => mixState[k]?.on);
+  const budget = Math.max(2000, Math.min(4500, Math.floor(60000 / Math.max(1, sel.length))));
+  return Promise.all(sel.map(async ({ k, t }) => { const i = byId.get(mixState[k].id); return { layer: t, vendor: i.vendor, title: i.title, text: await layerExcerpt(k, i.id, budget) }; }));
+}
+async function mixRaw() {
+  const refs = await mixRefs(); if (!refs.length) { toast('Marque pelo menos um atributo'); return; }
+  const md = `# Rascunho montado por atributos\n\n> Colagem de trechos reais para estudo. Adapte antes de usar: troque nomes, URLs e regras das empresas pelas suas.\n\n` +
+    refs.map(r => `## ${r.layer}\n_Inspirado em ${r.vendor} · ${r.title}_\n\n${r.text}`).join('\n\n---\n\n');
+  chat.push({ role: 'user', content: 'Juntar os trechos escolhidos (sem IA):\n' + mixLabel(), local: true });
+  chat.push({ role: 'assistant', content: 'Rascunho montado localmente, sem IA. Use “Gerar prompt com IA” para fundir e adaptar ao seu produto.\n\n```markdown\n' + md + '\n```', local: true });
+  store.set('chat', chat); drawChat();
+}
+async function mixGenerate() {
+  if (!MIX.some(({ k }) => mixState[k]?.on)) { toast('Marque pelo menos um atributo'); return; }
+  const prod = $('#stProduct').value.trim(), goal = $('#stGoal').value.trim();
+  const msg = `Monte um system prompt para: ${prod || '(produto não informado)'}.\nObjetivo e público: ${goal || '(não informado)'}.\n\nUse cada camada inspirada na fonte escolhida:\n${mixLabel()}`;
+  const lis = $$('.ml').filter(li => mixState[li.dataset.k]?.on);
+  lis.forEach((li, n) => setTimeout(() => li.classList.add('reading'), n * 220));
+  $('#dna').classList.add('live');
+  await send(msg, 'mixar', mixRefs);
+  $$('.ml.reading').forEach(li => li.classList.remove('reading')); $('#dna').classList.remove('live');
+}
+async function chatRefsPayload() {
+  const techs = REF_TECHS[chatMode] || ['identidade', 'tom'];
+  return Promise.all(chatRefs.map(id => byId.get(id)).filter(Boolean).map(async i => { let t; try { t = await fetchText(i); } catch { t = i.excerpt; } return { vendor: i.vendor, title: i.title, text: extractFor(t, techs, 12000) }; }));
+}
+function drawModes() { $$('#chatModes .chip').forEach(c => c.classList.toggle('on', c.dataset.mode === chatMode)); $('#chatModeHelp').textContent = MODES_UI[chatMode][1]; }
+function refSearch(q) {
+  q = q.trim().toLowerCase(); if (!q) { $('#refResults').innerHTML = ''; return; }
+  const r = feat.filter(i => (i.title + ' ' + i.vendor + ' ' + i.path).toLowerCase().includes(q)).slice(0, 12);
+  $('#refResults').innerHTML = r.map(i => `<button type="button" data-add="${i.id}" style="--c:${vcol(i.vendor)}"><i></i>${esc(i.vendor)} · ${esc(displayTitle(i))} <small class="muted">${fmtK(i.tokens)} tokens</small></button>`).join('') || '<p class="muted">Nada encontrado.</p>';
+}
+function drawRefs() { $('#refSel').innerHTML = chatRefs.map(id => byId.get(id)).filter(Boolean).map(i => `<button class="chip" type="button" data-rm="${i.id}" title="Remover" style="--c:${vcol(i.vendor)}"><i></i>${esc(displayTitle(i))} ✕</button>`).join('') || '<span class="muted">Nenhuma referência. A IA usa só boas práticas gerais.</span>'; }
+function md2html(src) {
+  const parts = src.split(/```[a-zA-Z]*\n?/);
+  return parts.map((p, n) => {
+    if (n % 2) return `<pre><code>${esc(p.replace(/\n$/, ''))}</code></pre>`;
+    return esc(p).split(/\n{2,}/).map(b => {
+      if (/^#{1,4} /.test(b)) return `<h4>${b.replace(/^#+ /, '')}</h4>`;
+      if (/^(\s*[-*] |\s*\d+\. )/m.test(b) && b.split('\n').every(l => /^(\s*[-*] |\s*\d+\. )/.test(l) || !l.trim() || /^\s{2,}/.test(l))) return '<ul>' + b.split('\n').filter(l => l.trim()).map(l => `<li>${l.replace(/^\s*([-*]|\d+\.) /, '')}</li>`).join('') + '</ul>';
+      return `<p>${b.replace(/\n/g, '<br>')}</p>`;
+    }).join('').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
+  }).join('');
+}
+function drawChat() {
+  const box = $('#msgs');
+  box.innerHTML = chat.length ? chat.map(m => `<div class="msg ${m.role === 'user' ? 'user' : m.err ? 'err' : 'ai'}">${m.role === 'user' ? esc(m.content) : md2html(m.content)}</div>`).join('')
+    : `<div class="msg sys">Escolha os atributos à esquerda e clique em <b>Gerar prompt com IA</b>, ou escreva aqui o que precisa. Ctrl+Enter envia.</div>`;
+  box.scrollTop = box.scrollHeight;
+  $('#outActions').hidden = !lastPrompt();
+}
+function lastPrompt() {
+  for (let i = chat.length - 1; i >= 0; i--) { const m = chat[i]; if (m.role !== 'assistant' || m.err) continue; const blocks = [...m.content.matchAll(/```[a-zA-Z]*\n([\s\S]*?)```/g)].map(x => x[1]); if (blocks.length) return blocks.sort((a, b) => b.length - a.length)[0].trim(); }
+  return '';
+}
+async function send(text, mode, refsFn) {
+  if (busy) return;
+  if (!API || !health?.ok) { await checkHealth(); if (!API || !health?.ok) { chat.push({ role: 'user', content: text }, { role: 'assistant', err: true, content: 'A IA não está disponível aqui. Ela funciona no site publicado, com o backend configurado. Enquanto isso, use “Juntar trechos sem IA” ou o Laboratório.' }); drawChat(); return; } }
+  busy = true; $('#chatSend').disabled = true; $('#mixGen').disabled = true;
+  chat.push({ role: 'user', content: text }); drawChat();
+  const box = $('#msgs'), el = document.createElement('div'); el.className = 'msg ai'; el.innerHTML = '<span class="typing">Lendo as referências</span>'; box.appendChild(el); box.scrollTop = box.scrollHeight;
+  let out = '';
+  try {
+    const refs = refsFn ? await refsFn() : [];
+    const ctx = `\n\n[Contexto do usuário] Produto: ${$('#stProduct').value || '—'} | Objetivo/público: ${$('#stGoal').value || '—'}`;
+    const messages = chat.filter(m => !m.err && !m.local).map(m => ({ role: m.role, content: m.content }));
+    messages[messages.length - 1].content += ctx;
+    el.innerHTML = '<span class="typing">Pensando</span>';
+    const r = await fetch(API + '/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Access-Code': $('#stCode').value || '' }, body: JSON.stringify({ mode, target: $('#stTarget').value, refs, messages }) });
+    if (!r.ok) { let e = 'Erro ' + r.status; try { e = (await r.json()).error || e; } catch { } throw new Error(e); }
+    const rd = r.body.getReader(), dec = new TextDecoder(); let buf = '';
+    while (true) {
+      const { value, done } = await rd.read(); if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let p; while ((p = buf.indexOf('\n\n')) >= 0) { const ev = buf.slice(0, p); buf = buf.slice(p + 2);
+        if (!ev.startsWith('data:')) continue; const d = JSON.parse(ev.slice(5)); if (d.t) { out += d.t; el.innerHTML = md2html(out) + '<span class="typing"></span>'; box.scrollTop = box.scrollHeight; } }
+    }
+    chat.push({ role: 'assistant', content: out || '(sem resposta)' });
+  } catch (e) {
+    chat.push({ role: 'assistant', err: true, content: e.message || 'Falha na conexão.' });
+    if (out) chat.splice(chat.length - 1, 0, { role: 'assistant', content: out });
+  } finally {
+    busy = false; $('#chatSend').disabled = false; $('#mixGen').disabled = false;
+    store.set('chat', chat.slice(-40)); drawChat();
+  }
+}
 
 /* ---------- boot ---------- */
 route();
