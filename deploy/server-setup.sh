@@ -7,6 +7,16 @@ APP="${APP_NAME:-secretsaiprompts}"
 CADDYFILE=/etc/caddy/Caddyfile
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
 
+# Valida com o MESMO ambiente do Caddy em execução (o Caddyfile usa variáveis como {$KIOSK_TOKEN},
+# que vêm do systemd e não existem no shell). Os valores não são impressos.
+caddy_validate() {
+  ( PID="$(systemctl show -p MainPID --value caddy 2>/dev/null || true)"
+    if [ -n "$PID" ] && [ "$PID" != 0 ] && [ -r "/proc/$PID/environ" ]; then
+      while IFS= read -r -d '' kv; do export "$kv"; done < "/proc/$PID/environ"
+    fi
+    caddy validate --config "$CADDYFILE" --adapter caddyfile ) >/tmp/caddy-validate.log 2>&1
+}
+
 # APP_DIR = pasta servida pelo Caddy. Com pacote enviado por deploy.sh, extrai nela;
 # sem pacote (git clone feito no próprio servidor), usa os arquivos que já estão lá.
 if [ -f /tmp/raio-x.tar.gz ]; then
@@ -25,7 +35,7 @@ chmod o+x /root /root/apps
 if grep -qE "^${DOMAIN//./\\.}[[:space:]]*\{" "$CADDYFILE" "${CADDYFILE%/*}"/sites-enabled/* 2>/dev/null; then
   echo "==> $DOMAIN já existe no Caddy; só os arquivos foram atualizados."
 else
-  if ! caddy validate --config "$CADDYFILE" --adapter caddyfile >/tmp/caddy-validate.log 2>&1; then
+  if ! caddy_validate; then
     echo "ERRO: o Caddyfile ATUAL já não valida (antes de qualquer mudança). Nada foi alterado."
     grep -i error /tmp/caddy-validate.log | tail -3
     L=$(grep -oE 'Caddyfile:[0-9]+' /tmp/caddy-validate.log | tail -1 | cut -d: -f2)
@@ -45,7 +55,7 @@ $DOMAIN {
 	file_server
 }
 CADDY
-  if ! caddy validate --config "$CADDYFILE" --adapter caddyfile >/tmp/caddy-validate.log 2>&1; then
+  if ! caddy_validate; then
     echo "ERRO na validação; restaurando o Caddyfile anterior."; cat /tmp/caddy-validate.log | tail -20
     cp -a "${CADDYFILE%/*}/Caddyfile.before-$APP-$TS" "$CADDYFILE"; exit 1
   fi
