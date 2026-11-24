@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Raio-X dos System Prompts</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="#inicio" aria-label="Início">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="brand-name">Raio-X <em>dos System Prompts</em></span>
+    </a>
+    <nav class="nav" id="nav" aria-label="Seções">
+      <a href="#inicio" data-view="inicio">Início</a>
+      <a href="#anatomia" data-view="anatomia">Anatomia</a>
+      <a href="#explorar" data-view="explorar">Explorar</a>
+      <a href="#linha-do-tempo" data-view="linha-do-tempo">Linha do tempo</a>
+      <a href="#comparar" data-view="comparar">Comparar</a>
+      <a href="#tecnicas" data-view="tecnicas">Técnicas</a>
+      <a href="#laboratorio" data-view="laboratorio">Laboratório</a>
+      <a href="#aprender" data-view="aprender">Trilha</a>
+      <a href="#como-usar" data-view="como-usar">Como usar</a>
+    </nav>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Alternar tema claro/escuro" title="Alternar tema">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ============ INÍCIO ============ -->
+<section class="view" id="v-inicio" data-view="inicio">
+  <div class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">A conversa antes da conversa</p>
+      <h1>Toda IA recebe um roteiro secreto antes de você digitar a primeira palavra.</h1>
+      <p class="lede">Este sistema abre e analisa o maior acervo público desses roteiros, os <b>system prompts</b>. Veja como Claude, ChatGPT, Gemini, Grok e outras <span data-stat="vendors">20</span>+ IAs são instruídas, que técnicas usam e o que você pode aprender para escrever prompts melhores.</p>
+      <div class="hero-cta">
+        <a class="btn primary" href="#anatomia">Ver a anatomia animada</a>
+        <a class="btn" href="#explorar">Explorar o acervo</a>
+        <a class="btn ghost" href="#laboratorio">Testar meu prompt</a>
+      </div>
+    </div>
+    <div class="xray" aria-label="Trechos reais de system prompts sendo revelados">
+      <div class="xray-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="xray-title" id="xrayTitle">system_prompt.md</span></div>
+      <div class="xray-body" id="xrayBody"></div>
+      <div class="xray-foot"><span id="xrayVendor">—</span><span class="xray-tag" id="xrayTag">—</span></div>
+    </div>
+  </div>
+
+  <div class="stats" id="stats">
+    <div class="stat"><b data-count="prompts">0</b><span>prompts analisados</span></div>
+    <div class="stat"><b data-count="featured">0</b><span>em destaque no índice</span></div>
+    <div class="stat"><b data-count="vendors">0</b><span>empresas e produtos</span></div>
+    <div class="stat"><b data-count="mtokens">0</b><span>milhões de tokens estimados</span></div>
+    <div class="stat"><b data-count="biggest">0</b><span>mil tokens no maior prompt</span></div>
+  </div>
+
+  <div class="block">
+    <div class="block-head">
+      <h2>Quem está no acervo</h2>
+      <p>Cada bolha é uma empresa. O tamanho mostra quantos prompts ela tem. Clique para explorar.</p>
+    </div>
+    <div class="bubbles" id="bubbles"></div>
+  </div>
+
+  <div class="block">
+    <div class="block-head">
+      <h2>Por onde começar</h2>
+      <p>Seis caminhos, do mais visual ao mais prático.</p>
+    </div>
+    <div class="paths">
+      <a class="path" href="#anatomia"><b>Anatomia</b><span>As camadas de um system prompt montadas passo a passo, com trechos reais.</span></a>
+      <a class="path" href="#explorar"><b>Explorar</b><span>Busque, filtre e abra qualquer prompt com diagnóstico e texto destacado por técnica.</span></a>
+      <a class="path" href="#linha-do-tempo"><b>Linha do tempo</b><span>Animação do crescimento do acervo e da evolução de tamanho por família de modelos.</span></a>
+      <a class="path" href="#comparar"><b>Comparar</b><span>Coloque dois prompts lado a lado: radar de técnicas, métricas e estrutura.</span></a>
+      <a class="path" href="#tecnicas"><b>Técnicas</b><span>12 padrões que as empresas repetem, com exemplos reais e quando usar.</span></a>
+      <a class="path" href="#laboratorio"><b>Laboratório</b><span>Cole seu prompt, receba nota e sugestões, ou gere um a partir de um formulário.</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ANATOMIA ============ -->
+<section class="view" id="v-anatomia" data-view="anatomia" hidden>
+  <div class="view-head">
+    <p class="eyebrow">Anatomia</p>
+    <h2>Como um system prompt é montado</h2>
+    <p>Quase todos seguem a mesma ordem. Use o botão para montar as camadas uma a uma. Cada camada mostra um trecho real tirado do acervo.</p>
+  </div>
+  <div class="anat">
+    <div class="anat-stack" id="anatStack" aria-live="polite"></div>
+    <div class="anat-side">
+      <div class="anat-card" id="anatCard"></div>
+      <div class="anat-ctl">
+        <button class="btn" id="anatPrev" type="button">Voltar camada</button>
+        <button class="btn primary" id="anatNext" type="button">Próxima camada</button>
+        <button class="btn ghost" id="anatPlay" type="button">Montar automaticamente</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-head">
+      <h2>O caminho de uma mensagem</h2>
+      <p>O modelo nunca vê só a sua pergunta. Ele lê tudo isto, nesta ordem, a cada resposta.</p>
+    </div>
+    <div class="flow" id="flow">
+      <div class="flow-node sys"><b>System prompt</b><span>regras da empresa, ferramentas, data atual</span></div>
+      <div class="flow-arrow"><i></i></div>
+      <div class="flow-node ctx"><b>Contexto injetado</b><span>memória, resultados de busca, arquivos, lembretes</span></div>
+      <div class="flow-arrow"><i></i></div>
+      <div class="flow-node usr"><b>Sua mensagem</b><span>e o histórico da conversa</span></div>
+      <div class="flow-arrow"><i></i></div>
+      <div class="flow-node mdl"><b>Modelo</b><span>gera a resposta token a token</span></div>
+      <div class="flow-arrow"><i></i></div>
+      <div class="flow-node out"><b>Resposta</b><span>ou uma chamada de ferramenta, que volta ao início do ciclo</span></div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-head">
+      <h2>Proporção típica de cada camada</h2>
+      <p>Média da densidade de cada técnica nos prompts em destaque, por empresa. Passe o mouse para ver os números.</p>
+    </div>
+    <div class="mix" id="mix"></div>
+  </div>
+</section>
+
+<!-- ============ EXPLORAR ============ -->
+<section class="view" id="v-explorar" data-view="explorar" hidden>
+  <div class="view-head">
+    <p class="eyebrow">Explorar</p>
+    <h2>O acervo completo</h2>
+    <p>Filtre por empresa, tipo e técnica. Abra um prompt para ver o diagnóstico, a estrutura e o texto completo com as técnicas destacadas.</p>
+  </div>
+  <div class="explore">
+    <aside class="filters" aria-label="Filtros">
+      <label class="fld"><span>Buscar</span><input id="q" type="search" placeholder="ex.: Claude Code, memória, Gemini"></label>
+      <label class="fld"><span>Ordenar por</span>
+        <select id="sort">
+          <option value="featured">Destaques primeiro</option>
+          <option value="tokens">Maior tamanho</option>
+          <option value="recent">Mais recentes</option>
+          <option value="commits">Mais revisados</option>
+          <option value="tech">Técnica selecionada</option>
+        </select>
+      </label>
+      <label class="chk"><input type="checkbox" id="onlyFeat" checked> Só prompts em destaque</label>
+      <div class="fld"><span>Tipo</span><div class="chips" id="kindChips"></div></div>
+      <div class="fld"><span>Técnica em evidência</span><div class="chips" id="techChips"></div></div>
+      <div class="fld"><span>Empresa</span><div class="chips" id="vendorChips"></div></div>
+      <div class="fld"><span>Fonte</span><div class="chips" id="srcChips"></div></div>
+      <button class="btn ghost small" id="clearF" type="button">Limpar filtros</button>
+    </aside>
+    <div class="results">
+      <div class="res-bar"><span id="resCount">—</span></div>
+      <div class="cards" id="cards"></div>
+      <div class="more-wrap"><button class="btn" id="more" type="button">Mostrar mais</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LINHA DO TEMPO ============ -->
+<section class="view" id="v-linha-do-tempo" data-view="linha-do-tempo" hidden>
+  <div class="view-head">
+    <p class="eyebrow">Linha do tempo</p>
+    <h2>Como o acervo cresceu</h2>
+    <p>Prompts acumulados por empresa, mês a mês. As datas vêm do nome do arquivo ou do commit que adicionou o arquivo ao repositório, então refletem quando o prompt foi publicado, não quando a IA foi lançada.</p>
+  </div>
+  <div class="race-ctl">
+    <button class="btn primary" id="racePlay" type="button">Reproduzir</button>
+    <input type="range" id="raceRange" min="0" max="1" value="1" aria-label="Mês">
+    <b class="race-month" id="raceMonth">—</b>
+  </div>
+  <div class="race" id="race"></div>
+  <div class="hist-wrap"><svg id="hist" class="chart" role="img" aria-label="Prompts adicionados por mês"></svg></div>
+
+  <div class="block">
+    <div class="block-head">
+      <h2>Evolução dentro de uma família</h2>
+      <p>Escolha um grupo do índice. Os pontos são versões, em ordem de publicação. O eixo vertical é o tamanho estimado em tokens.</p>
+    </div>
+    <label class="fld inline"><span>Família</span><select id="famSel"></select></label>
+    <div class="fam-wrap"><svg id="fam" class="chart" role="img" aria-label="Tamanho dos prompts por versão"></svg></div>
+    <p class="note" id="famNote"></p>
+  </div>
+</section>
+
+<!-- ============ COMPARAR ============ -->
+<section class="view" id="v-comparar" data-view="comparar" hidden>
+  <div class="view-head">
+    <p class="eyebrow">Comparar</p>
+    <h2>Dois prompts lado a lado</h2>
+    <p>Escolha dois prompts. O radar sobrepõe o perfil de técnicas, e a tabela mostra o que muda em tamanho e estrutura.</p>
+  </div>
+  <div class="cmp-pick">
+    <label class="fld"><span>Prompt A</span><select id="cmpA"></select></label>
+    <button class="icon-btn" id="cmpSwap" type="button" aria-label="Inverter A e B" title="Inverter">⇄</button>
+    <label class="fld"><span>Prompt B</span><select id="cmpB"></select></label>
+  </div>
+  <div class="cmp-presets" id="cmpPresets"></div>
+  <div class="cmp">
+    <div class="cmp-radar"><svg id="cmpRadar" class="chart" viewBox="0 0 420 420" role="img" aria-label="Radar comparativo"></svg>
+      <div class="legend" id="cmpLegend"></div></div>
+    <div class="cmp-table" id="cmpTable"></div>
+  </div>
+  <div class="cmp-heads" id="cmpHeads"></div>
+</section>
+
+<!-- ============ TÉCNICAS ============ -->
+<section class="view" id="v-tecnicas" data-view="tecnicas" hidden>
+  <div class="view-head">
+    <p class="eyebrow">Técnicas</p>
+    <h2>12 padrões que se repetem em todas as empresas</h2>
+    <p>Cada técnica foi detectada automaticamente no texto. Clique numa técnica para ver exemplos reais de várias empresas, quando usar e quais prompts a usam mais.</p>
+  </div>
+  <div class="tech-grid" id="techGrid"></div>
+  <div class="tech-detail" id="techDetail"></div>
+</section>
+
+<!-- ============ LABORATÓRIO ============ -->
+<section class="view" id="v-laboratorio" data-view="laboratorio" hidden>
+  <div class="view-head">
+    <p class="eyebrow">Laboratório</p>
+    <h2>Analise e melhore o seu prompt</h2>
+    <p>O mesmo analisador usado no acervo roda aqui no seu navegador. Nada é enviado a lugar nenhum.</p>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="tab on" role="tab" aria-selected="true" data-tab="analisar" type="button">Analisar um prompt</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="gerar" type="button">Gerar a partir de um formulário</button>
+  </div>
+  <div class="lab" data-pane="analisar">
+    <div class="lab-in">
+      <label class="fld"><span>Seu system prompt</span>
+        <textarea id="labText" rows="16" spellcheck="false"></textarea></label>
+      <div class="lab-btns">
+        <button class="btn ghost small" id="labSample" type="button">Carregar exemplo fraco</button>
+        <button class="btn ghost small" id="labGood" type="button">Carregar exemplo melhorado</button>
+        <span class="muted" id="labCount"></span>
+      </div>
+    </div>
+    <div class="lab-out">
+      <div class="score"><div class="score-ring" id="scoreRing"><b id="scoreVal">0</b><span>de 100</span></div>
+        <div><h3 id="scoreLabel">—</h3><p class="muted">Nota de cobertura: quantas das camadas usadas pelas grandes empresas o seu prompt cobre. Não mede qualidade da escrita.</p></div></div>
+      <svg id="labRadar" class="chart" viewBox="0 0 420 420" role="img" aria-label="Seu prompt comparado à mediana do acervo"></svg>
+      <div class="legend"><span><i class="sw a"></i>Seu prompt</span><span><i class="sw m"></i>Mediana dos destaques</span></div>
+      <h3>Sugestões</h3>
+      <ul class="sugg" id="labSugg"></ul>
+    </div>
+  </div>
+  <div class="lab" data-pane="gerar" hidden>
+    <form class="gen-form" id="genForm">
+      <label class="fld"><span>Nome do assistente</span><input id="gName" value="Lia"></label>
+      <label class="fld"><span>Empresa ou produto</span><input id="gOrg" value="Loja Aurora"></label>
+      <label class="fld wide"><span>Objetivo principal</span><input id="gGoal" value="ajudar clientes a escolher produtos, acompanhar pedidos e resolver trocas"></label>
+      <label class="fld"><span>Público</span><input id="gAud" value="clientes da loja online, a maioria pelo celular"></label>
+      <label class="fld"><span>Tom</span>
+        <select id="gTone"><option>caloroso e direto</option><option>profissional e conciso</option><option>didático e paciente</option><option>técnico e preciso</option><option>bem-humorado e leve</option></select></label>
+      <label class="fld"><span>Idioma das respostas</span><input id="gLang" value="português do Brasil"></label>
+      <label class="fld"><span>Formato</span>
+        <select id="gFmt"><option value="chat">Chat curto (poucas listas)</option><option value="doc">Respostas estruturadas com títulos</option><option value="voz">Voz (sem Markdown)</option></select></label>
+      <label class="fld wide"><span>Ferramentas disponíveis (uma por linha: nome: o que faz)</span>
+        <textarea id="gTools" rows="3">buscar_pedido: consulta status por número do pedido
+buscar_produto: pesquisa o catálogo por nome ou categoria</textarea></label>
+      <label class="fld wide"><span>Limites (um por linha)</span>
+        <textarea id="gRules" rows="3">Nunca prometa prazos que o sistema não confirmou.
+Não peça senha nem dados completos de cartão.
+Assuntos fora da loja: responda brevemente e volte ao tema.</textarea></label>
+      <label class="chk"><input type="checkbox" id="gEx" checked> Incluir exemplo de resposta</label>
+      <label class="chk"><input type="checkbox" id="gDate" checked> Incluir data atual como variável</label>
+    </form>
+    <div class="gen-out">
+      <div class="gen-bar"><b>Prompt gerado</b><span class="muted" id="genMeta"></span>
+        <button class="btn small" id="genCopy" type="button">Copiar</button>
+        <button class="btn small ghost" id="genAnalyze" type="button">Analisar no laboratório</button></div>
+      <pre class="prompt-pre" id="genOut"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TRILHA ============ -->
+<section class="view" id="v-aprender" data-view="aprender" hidden>
+  <div class="view-head">
+    <p class="eyebrow">Trilha de aprendizado</p>
+    <h2>O que aprender com o acervo, em 8 etapas</h2>
+    <p>Siga em ordem. Cada etapa tem o conceito, prompts reais para ler e um exercício. O progresso fica salvo neste navegador.</p>
+  </div>
+  <div class="progress"><div class="progress-bar"><i id="progBar"></i></div><span id="progTxt">0 de 8</span></div>
+  <ol class="trail" id="trail"></ol>
+</section>
+
+<!-- ============ COMO USAR ============ -->
+<section class="view" id="v-como-usar" data-view="como-usar" hidden>
+  <div class="view-head">
+    <p class="eyebrow">Como usar</p>
+    <h2>Guia do sistema e boas práticas</h2>
+  </div>
+  <div class="guide">
+    <article class="g-card">
+      <h3>Navegando</h3>
+      <ul>
+        <li><b>Anatomia</b> mostra as camadas. Comece por aqui se nunca leu um system prompt.</li>
+        <li><b>Explorar</b> tem tudo. Desmarque “Só prompts em destaque” para ver as skills, ferramentas e arquivos de apoio (mais de 1.500).</li>
+        <li>No detalhe de um prompt, <b>Carregar texto completo</b> busca o arquivo original no GitHub e pinta cada técnica com uma cor. Clique nas cores da legenda para ligar e desligar.</li>
+        <li><b>Comparar</b> aceita qualquer par. Os atalhos prontos mostram contrastes clássicos.</li>
+        <li><b>Laboratório</b> analisa o seu texto localmente e sugere melhorias concretas.</li>
+      </ul>
+    </article>
+    <article class="g-card">
+      <h3>Como ler as métricas</h3>
+      <ul>
+        <li><b>Tokens</b> são estimados como caracteres ÷ 4. Servem para comparar tamanhos, não para cobrança exata.</li>
+        <li><b>Densidade</b> é ocorrências por 10 mil caracteres. Um prompt curto e focado pode ter densidade alta com poucas ocorrências.</li>
+        <li>O <b>radar</b> normaliza cada técnica pelo percentil 95 dos destaques. 100% quer dizer “tão intenso quanto os prompts mais intensos do acervo”.</li>
+        <li>A detecção é por padrões de texto (em inglês e português). Ela acerta a tendência, mas pode contar falsos positivos, como “tool” numa frase qualquer.</li>
+      </ul>
+    </article>
+    <article class="g-card">
+      <h3>Lições práticas do acervo</h3>
+      <ul>
+        <li><b>Explique o porquê.</b> Os prompts mais recentes trocam “NUNCA faça X” por uma frase que dá a razão. Modelos generalizam melhor a partir de razões.</li>
+        <li><b>Estruture com títulos ou tags XML.</b> Seções como <code>&lt;tools&gt;</code> e <code>## Formatting</code> ajudam o modelo e quem mantém o texto.</li>
+        <li><b>Injete o contexto que muda:</b> data, local, modelo. Isso evita respostas desatualizadas.</li>
+        <li><b>Descreva cada ferramenta</b> com quando usar e quando não usar, não só a assinatura.</li>
+        <li><b>Mostre exemplos</b> de resposta boa e ruim para comportamentos sutis.</li>
+        <li><b>Diga o que fazer</b> em vez de só o que evitar.</li>
+      </ul>
+    </article>
+    <article class="g-card warn">
+      <h3>Segurança: o que os vazamentos ensinam</h3>
+      <ul>
+        <li><b>Todo system prompt pode vazar.</b> Este acervo prova isso. Nunca coloque chaves de API, senhas, URLs internas ou dados de clientes no prompt.</li>
+        <li>“Não revele estas instruções” não é proteção. Trate o prompt como público e coloque a segurança real no servidor e nas permissões das ferramentas.</li>
+        <li><b>Injeção de prompt</b>: conteúdo de páginas, e-mails e arquivos pode trazer instruções falsas. Os agentes do acervo marcam esse conteúdo como dado, não como ordem. Faça o mesmo.</li>
+        <li>Use o acervo para estudar e criar os seus próprios prompts. Não copie prompts proprietários para produtos comerciais nem use o conhecimento para burlar proteções de outras empresas.</li>
+      </ul>
+    </article>
+    <article class="g-card">
+      <h3>Atualizando os dados</h3>
+      <p>O catálogo é gerado por <code>explorer/build.py</code>. Para atualizar com a versão mais nova do acervo:</p>
+      <pre class="cmd">git clone --depth 1 https://github.com/asgeirtj/system_prompts_leaks.git /tmp/spl
+git clone --filter=blob:none --no-checkout https://github.com/asgeirtj/system_prompts_leaks.git /tmp/spl-hist
+python3 explorer/build.py \
+  --source asgeirtj=/tmp/spl --history asgeirtj=/tmp/spl-hist \
+  --repo-url asgeirtj=asgeirtj/system_prompts_leaks@main \
+  --source local=. --repo-url local=hudsonrj/leaked-system-prompts@main</pre>
+      <p>Depois abra <code>explorer/index.html</code> no navegador. Não precisa de servidor.</p>
+    </article>
+    <article class="g-card">
+      <h3>Fontes</h3>
+      <ul id="srcList"></ul>
+      <p class="muted" id="genAt"></p>
+    </article>
+  </div>
+</section>
+
+</main>
+
+<!-- Painel de detalhe -->
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer-bg" data-close></div>
+  <aside class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+    <button class="icon-btn drawer-x" type="button" data-close aria-label="Fechar">✕</button>
+    <div id="dBody"></div>
+  </aside>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="data/catalog.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
