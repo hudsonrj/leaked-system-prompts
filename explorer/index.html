@@ -250,8 +250,39 @@
   <div class="tabs" role="tablist">
     <button class="tab on" type="button" role="tab" aria-selected="true" data-stab="mixer">Montar por atributos</button>
     <button class="tab" type="button" role="tab" aria-selected="false" data-stab="chat">Conversar com a IA</button>
+    <button class="tab" type="button" role="tab" aria-selected="false" data-stab="testar">Testar e analisar</button>
   </div>
 
+
+  <div class="test-pane" id="testPane" hidden>
+    <div class="tp-intro">
+      <p>Rode perguntas reais contra o seu prompt (A) e, se quiser, contra outra versão (B). A IA responde com cada prompt e um avaliador imparcial dá notas de 0 a 10. No final, gere a <b>análise completa</b>: pontos fortes, fracos, casos indicados, riscos e recomendações.</p>
+    </div>
+    <div class="tp-grid">
+      <div class="fld"><span>Prompt A: o seu prompt</span><textarea id="tpA" rows="11" spellcheck="false" placeholder="Cole aqui ou use o último prompt gerado no Estúdio"></textarea>
+        <div class="lab-btns"><button class="btn small ghost" type="button" id="tpAFromChat">Usar o último gerado</button><span class="muted" id="tpAInfo"></span></div></div>
+      <div class="fld"><span>Prompt B: outra versão (opcional)</span><textarea id="tpB" rows="11" spellcheck="false" placeholder="Deixe vazio para testar só o A"></textarea>
+        <div class="lab-btns"><button class="btn small ghost" type="button" id="tpBFromChat">Usar a versão anterior</button><button class="btn small ghost" type="button" id="tpBClear">Limpar</button></div></div>
+    </div>
+    <div class="fld"><span>Perguntas de teste (uma por linha)</span>
+      <textarea id="tpQ" rows="7" spellcheck="false"></textarea>
+      <div class="lab-btns"><span class="muted">Adicionar casos:</span>
+        <button class="chip" type="button" data-cases="normais">Uso normal</button>
+        <button class="chip" type="button" data-cases="dificeis">Casos difíceis</button>
+        <button class="chip" type="button" data-cases="ataques">Ataques e injeção</button>
+        <button class="chip" type="button" data-cases="codigo">Agente de código</button>
+        <span class="muted" id="tpQInfo"></span></div>
+    </div>
+    <div class="st-actions">
+      <button class="btn primary" type="button" id="tpRun">Rodar testes</button>
+      <button class="btn best" type="button" id="tpReport"><span aria-hidden="true">✦</span> Gerar análise completa</button>
+      <span class="muted" id="tpInfo"></span>
+    </div>
+    <div class="tp-progress" hidden><i id="tpBar"></i></div>
+    <div class="tp-summary" id="tpSummary"></div>
+    <div class="tp-results" id="tpResults"></div>
+    <div class="report" id="report"></div>
+  </div>
   <div class="studio">
     <div class="st-left">
       <div data-spane="mixer">
@@ -260,7 +291,11 @@
           <div class="dna-bar" id="dnaBar"></div>
           <div class="dna-foot" id="dnaFoot"></div>
         </div>
-        <div class="st-presets"><span class="muted">Começar de um modelo pronto:</span><div class="chips" id="mixPresets"></div></div>
+        <div class="best-row">
+          <button class="btn best" type="button" id="mixBest"><span aria-hidden="true">✦</span> Melhor de cada</button>
+          <p class="muted">Escolhe, para cada atributo marcado, a fonte com a maior nota de qualidade: relevância da técnica, versão recente, regras que explicam o porquê, ênfase moderada, boa estrutura e produto maduro.</p>
+        </div>
+        <div class="st-presets"><span class="muted">Ou comece de um modelo pronto:</span><div class="chips" id="mixPresets"></div></div>
         <ol class="mix-layers" id="mixLayers"></ol>
         <div class="st-actions">
           <button class="btn primary" type="button" id="mixGen">Gerar prompt com IA</button>

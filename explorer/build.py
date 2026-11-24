@@ -40,6 +40,7 @@ TECHNIQUES = {
     'agente':      r"\bfiles?\b|\bterminal\b|\bcommit\b|\brepository\b|\bshell\b|\bsandbox\b|\bbranch\b|\btests?\b",
 }
 TECH_RE = {k: re.compile(v, re.I) for k, v in TECHNIQUES.items() if v}
+WHY_RE = re.compile(r"\bbecause\b|\bso that\b|\bthis (is|helps|ensures|prevents)\b|\bin order to\b|\bwhich (means|helps)\b|\botherwise\b|\bporque\b|\bpara que\b", re.I)
 EMPH_RE = re.compile(r"\b(IMPORTANT|MUST|NEVER|ALWAYS|CRITICAL|DO NOT|REQUIRED|ONLY)\b")
 XML_RE = re.compile(r"</([a-zA-Z_][a-zA-Z0-9_\-]{1,40})>")
 HEAD_RE = re.compile(r"^(#{1,4})\s+(.+?)\s*#*\s*$", re.M)
@@ -139,6 +140,7 @@ def analyze(text):
         'lines': text.count('\n') + 1,
         'tech': tech, 'dens': density,
         'xml': xml, 'heads': heads, 'emph': emph_c,
+        'why': round(len(WHY_RE.findall(text)) * 10000 / n, 2),
         'nheads': len(HEAD_RE.findall(text)), 'nxml': len(set(XML_RE.findall(text))),
     }
 
