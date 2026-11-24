@@ -1,64 +1,57 @@
 #!/usr/bin/env bash
-# Executado NO SERVIDOR por deploy.sh. Pode ser rodado de novo para atualizar.
+# Executado NO SERVIDOR por deploy.sh. Segue o padrão do servidor: Caddy + /root/apps/<app>.
+# Idempotente: rodar de novo só atualiza os arquivos.
 set -euo pipefail
 : "${APP_DIR:?}" "${DOMAIN:?}"
+APP="${APP_NAME:-secretsaiprompts}"
+CADDYFILE=/etc/caddy/Caddyfile
+TS="$(date -u +%Y%m%dT%H%M%SZ)"
 
-echo "==> Extraindo em $APP_DIR"
-mkdir -p "$APP_DIR"
-tar -xzf /tmp/raio-x.tar.gz -C "$APP_DIR"
-rm -f /tmp/raio-x.tar.gz
-# nginx roda como outro usuário: liberar só a travessia de /root e a leitura da app
-chmod 711 /root /root/apps
-find "$APP_DIR" -type d -exec chmod 755 {} + ; find "$APP_DIR" -type f -exec chmod 644 {} +
-
-if ! command -v nginx >/dev/null; then
-  echo "==> Instalando nginx"
-  if command -v apt-get >/dev/null; then apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nginx
-  elif command -v dnf >/dev/null; then dnf install -y nginx && systemctl enable --now nginx
-  else echo "Instale o nginx manualmente."; exit 1; fi
+# APP_DIR = pasta servida pelo Caddy. Com pacote enviado por deploy.sh, extrai nela;
+# sem pacote (git clone feito no próprio servidor), usa os arquivos que já estão lá.
+if [ -f /tmp/raio-x.tar.gz ]; then
+  echo "==> Atualizando arquivos em $APP_DIR"
+  mkdir -p "$APP_DIR"
+  NEW="$(mktemp -d)"
+  tar -xzf /tmp/raio-x.tar.gz -C "$NEW"
+  rm -rf "$APP_DIR/data" && cp -a "$NEW"/. "$APP_DIR"/
+  rm -rf "$NEW" /tmp/raio-x.tar.gz
 fi
+[ -f "$APP_DIR/index.html" ] || { echo "index.html não encontrado em $APP_DIR"; exit 1; }
+chmod -R a+rX "$APP_DIR"; chmod o+x "$(dirname "$APP_DIR")"
+# Caddy precisa atravessar /root (já está 711 neste servidor; garante sem abrir leitura)
+chmod o+x /root /root/apps
 
-# Se outra coisa (ex.: Docker/Traefik) já ocupa a porta 80 e não é o nginx, avisa e para
-if ss -ltnp 2>/dev/null | grep -E ':80\s' | grep -vq nginx; then
-  echo "AVISO: a porta 80 está em uso por outro processo (não nginx):"; ss -ltnp | grep -E ':80\s'
-  echo "Arquivos já estão em $APP_DIR. Configure o proxy existente para servir essa pasta em $DOMAIN."; exit 2
-fi
-
-CONF_DIR=/etc/nginx/sites-available; [ -d "$CONF_DIR" ] || CONF_DIR=/etc/nginx/conf.d
-CONF="$CONF_DIR/$DOMAIN.conf"
-echo "==> Configurando nginx ($CONF)"
-cat > "$CONF" <<NGX
-server {
-    listen 80;
-    listen [::]:80;
-    server_name $DOMAIN;
-    root $APP_DIR;
-    index index.html;
-
-    gzip on;
-    gzip_types text/css application/javascript application/json text/plain;
-    gzip_min_length 1024;
-
-    location / { try_files \$uri \$uri/ /index.html; }
-    location ~* \.(js|css)\$ { expires 1h; add_header Cache-Control "public"; }
-
-    add_header X-Content-Type-Options nosniff;
-    add_header Referrer-Policy strict-origin-when-cross-origin;
-}
-NGX
-if [ -d /etc/nginx/sites-enabled ]; then ln -sf "$CONF" "/etc/nginx/sites-enabled/$DOMAIN.conf"; fi
-nginx -t && systemctl reload nginx
-
-echo "==> HTTPS (Let's Encrypt)"
-if ! command -v certbot >/dev/null; then
-  if command -v apt-get >/dev/null; then DEBIAN_FRONTEND=noninteractive apt-get install -y -qq certbot python3-certbot-nginx
-  elif command -v dnf >/dev/null; then dnf install -y certbot python3-certbot-nginx; fi
-fi
-if command -v ufw >/dev/null && ufw status | grep -q active; then ufw allow 'Nginx Full' || true; fi
-if [ -n "${EMAIL:-}" ]; then M=(-m "$EMAIL"); else M=(--register-unsafely-without-email); fi
-if certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --redirect "${M[@]}"; then
-  echo "HTTPS ativo."
+if grep -qE "^${DOMAIN//./\\.}[[:space:]]*\{" "$CADDYFILE" "${CADDYFILE%/*}"/sites-enabled/* 2>/dev/null; then
+  echo "==> $DOMAIN já existe no Caddy; só os arquivos foram atualizados."
 else
-  echo "AVISO: certificado não emitido. Verifique se o registro A de $DOMAIN aponta para este servidor"
-  echo "e se as portas 80/443 estão abertas. O site segue disponível em http://$DOMAIN"
+  echo "==> Adicionando $DOMAIN ao Caddyfile (backup: Caddyfile.before-$APP-$TS)"
+  cp -a "$CADDYFILE" "${CADDYFILE%/*}/Caddyfile.before-$APP-$TS"
+  cat >> "$CADDYFILE" <<CADDY
+
+$DOMAIN {
+	log {
+		output file /var/log/caddy/${DOMAIN//./-}-access.log
+	}
+	encode gzip
+	root * $APP_DIR
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+	@assets path *.js *.css
+	header @assets Cache-Control "public, max-age=3600"
+	file_server
+}
+CADDY
+  if ! caddy validate --config "$CADDYFILE" --adapter caddyfile >/tmp/caddy-validate.log 2>&1; then
+    echo "ERRO na validação; restaurando o Caddyfile anterior."; cat /tmp/caddy-validate.log | tail -20
+    cp -a "${CADDYFILE%/*}/Caddyfile.before-$APP-$TS" "$CADDYFILE"; exit 1
+  fi
+  systemctl reload caddy
 fi
+
+echo "==> Testando (o certificado pode levar alguns segundos na primeira vez)"
+sleep 3
+curl -sS -o /dev/null -w "HTTP %{http_code} em https://$DOMAIN\n" --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/" || \
+  echo "Ainda sem resposta HTTPS. Veja: journalctl -u caddy -n 50 --no-pager"
