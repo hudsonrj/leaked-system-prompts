@@ -1,7 +1,11 @@
 # 05 · Cronograma — visão executiva
 
 > Planilha completa (114 tarefas, Gantt semanal, status editável): `cronograma/Cronograma_HAT_Vale_CDI.xlsx`.
-> Abas: **Resumo** · **Cronograma** · **Solicitações Vale** (rastreio das 34) · **Feriados** · **Riscos**.
+> Abas: **Resumo** · **Cronograma** (tarefas agrupadas por entrega, com o agente que cada uma habilita) · **Entregas e agentes** · **Solicitações Vale** (rastreio das 34) · **Feriados** · **Riscos**.
+
+**Entregas (o "todo" de cada tarefa):** ENT-01 Plano e combinados · ENT-02 Laboratório HAT (rede, segurança, dados) · ENT-03 Plataforma de IA · ENT-04 Porta de entrada (APIM) · ENT-05 Canal do Teams (A1) · ENT-06 Esteira e painel · ENT-07 Base de conhecimento · ENT-08 Piloto do A2 · ENT-09 Pacote para a Vale · ENT-10 Acessos na Vale · ENT-11 Ambiente Vale no ar · ENT-12 Fontes reais conectadas · ENT-13 Aceites e passagem de bastão.
+
+**Agentes:** A1 Analista de Negócio · A2 Engenheiro de Integração · A3 Suporte · A4 Conhecimento · *Todos* = fundação comum · *Gestão* = sem agente específico.
 > Início de referência: **seg 30/11/2026**. Datas em dias úteis com feriados nacionais e recesso 24 e 31/12.
 
 ## 1. Linha do tempo

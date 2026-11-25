@@ -1,6 +1,8 @@
 # Fonte do cronograma e das solicitações
 
 - `tasks.py` — tarefas (categoria, dificuldade, esforço, duração, predecessoras)
+- `human.py` — entregas (ENT-01…13), agentes (A1–A4), textos em linguagem simples por tarefa e por pedido à Vale
+- `responsaveis_status.json` — responsável sugerido, status e descrições editados na planilha (preservados ao regerar)
 - `solicitacoes.py` — catálogo único das 34 solicitações à Vale + anexos A/B
 - `build_xlsx.py` — calcula datas (dias úteis + feriados) e gera `../Cronograma_HAT_Vale_CDI.xlsx`
 - `gen_docs.py` — gera `docs/03-solicitacoes-permissoes-vale.md` e `docs/Solicitacoes_Acessos_Vale_CDI.docx`
