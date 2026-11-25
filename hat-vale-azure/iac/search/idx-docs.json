@@ -1,0 +1,28 @@
+{
+  "name": "idx-docs",
+  "fields": [
+    { "name": "chunk_id", "type": "Edm.String", "key": true, "filterable": true },
+    { "name": "documento", "type": "Edm.String", "searchable": true, "filterable": true },
+    { "name": "tipo_doc", "type": "Edm.String", "filterable": true, "facetable": true },
+    { "name": "interface_id", "type": "Edm.String", "filterable": true, "facetable": true },
+    { "name": "secao", "type": "Edm.String", "searchable": true, "filterable": true },
+    { "name": "titulo", "type": "Edm.String", "searchable": true, "analyzer": "pt-Br.microsoft" },
+    { "name": "conteudo", "type": "Edm.String", "searchable": true, "analyzer": "pt-Br.microsoft" },
+    { "name": "url_origem", "type": "Edm.String", "filterable": false },
+    { "name": "versao", "type": "Edm.String", "filterable": true },
+    { "name": "status_doc", "type": "Edm.String", "filterable": true, "facetable": true },
+    { "name": "atualizado_em", "type": "Edm.DateTimeOffset", "filterable": true, "sortable": true },
+    { "name": "grupos", "type": "Collection(Edm.String)", "filterable": true, "retrievable": false },
+    { "name": "vetor", "type": "Collection(Edm.Single)", "searchable": true, "retrievable": false, "dimensions": 3072, "vectorSearchProfile": "vp-hnsw" }
+  ],
+  "semantic": {
+    "defaultConfiguration": "sem-docs",
+    "configurations": [
+      { "name": "sem-docs", "prioritizedFields": { "titleField": { "fieldName": "titulo" }, "prioritizedContentFields": [ { "fieldName": "conteudo" } ], "prioritizedKeywordsFields": [ { "fieldName": "secao" }, { "fieldName": "documento" } ] } }
+    ]
+  },
+  "vectorSearch": {
+    "algorithms": [ { "name": "hnsw", "kind": "hnsw", "hnswParameters": { "metric": "cosine", "m": 4, "efConstruction": 400, "efSearch": 500 } } ],
+    "profiles": [ { "name": "vp-hnsw", "algorithm": "hnsw" } ]
+  }
+}

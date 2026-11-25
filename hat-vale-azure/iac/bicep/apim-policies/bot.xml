@@ -1,0 +1,29 @@
+<!--
+  /api/messages — Azure Bot (Teams)
+  Valida o JWT emitido pelo Bot Framework antes de encaminhar ao runtime.
+  {{bot-app-id}} = clientId da identidade id-cdi-bot (named value criado no apim.bicep).
+-->
+<policies>
+  <inbound>
+    <base />
+    <validate-jwt header-name="Authorization" failed-validation-httpcode="401" require-scheme="Bearer">
+      <openid-config url="https://login.botframework.com/v1/.well-known/openidconfiguration" />
+      <audiences>
+        <audience>{{bot-app-id}}</audience>
+      </audiences>
+      <issuers>
+        <issuer>https://api.botframework.com</issuer>
+      </issuers>
+    </validate-jwt>
+    <rate-limit calls="300" renewal-period="60" />
+  </inbound>
+  <backend>
+    <base />
+  </backend>
+  <outbound>
+    <base />
+  </outbound>
+  <on-error>
+    <base />
+  </on-error>
+</policies>

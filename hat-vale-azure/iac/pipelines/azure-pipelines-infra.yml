@@ -1,0 +1,93 @@
+# =============================================================================
+# azure-pipelines-infra.yml — CI/CD de infraestrutura (Azure DevOps)
+# HAT: pipeline na org HAT → assinatura HAT (lab)
+# Vale: mesmo YAML importado no Azure DevOps da Vale, service connection
+#       com Workload Identity Federation (sem segredo) e environment com
+#       aprovação manual do time de cloud da Vale.
+# =============================================================================
+trigger:
+  branches: { include: [ main ] }
+  paths: { include: [ iac/bicep/* ] }
+
+pr:
+  paths: { include: [ iac/bicep/* ] }
+
+parameters:
+  - name: target
+    type: string
+    default: lab
+    values: [ lab, vale-dev ]
+
+variables:
+  ${{ if eq(parameters.target, 'lab') }}:
+    serviceConnection: sc-hat-lab-cdi
+    resourceGroup: rg-integia-lab-brs
+    paramFile: iac/bicep/params/lab.bicepparam
+    adoEnvironment: hat-lab
+  ${{ else }}:
+    serviceConnection: sc-vale-dev-cdi
+    resourceGroup: rg-integia-dev-brs
+    paramFile: iac/bicep/params/vale-dev.bicepparam
+    adoEnvironment: vale-dev
+
+stages:
+  - stage: validate
+    displayName: Lint + What-if
+    jobs:
+      - job: whatif
+        pool:
+          # Vale: Managed DevOps Pool na snet-agents (rede privada)
+          ${{ if eq(parameters.target, 'lab') }}:
+            vmImage: ubuntu-latest
+          ${{ else }}:
+            name: mdp-integia-dev-brs
+        steps:
+          - checkout: self
+          - task: AzureCLI@2
+            displayName: bicep lint
+            inputs:
+              azureSubscription: $(serviceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az bicep install
+                az bicep lint --file iac/bicep/main.bicep
+                az bicep build-params --file $(paramFile) --stdout > /dev/null
+          - task: AzureCLI@2
+            displayName: what-if
+            inputs:
+              azureSubscription: $(serviceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az deployment group what-if -g $(resourceGroup) --parameters $(paramFile) \
+                  --result-format ResourceIdOnly | tee whatif.txt
+          - publish: whatif.txt
+            artifact: whatif
+
+  - stage: deploy
+    displayName: Deploy
+    dependsOn: validate
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: apply
+        environment: $(adoEnvironment)      # aprovação manual configurada no environment
+        pool:
+          ${{ if eq(parameters.target, 'lab') }}:
+            vmImage: ubuntu-latest
+          ${{ else }}:
+            name: mdp-integia-dev-brs
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                - task: AzureCLI@2
+                  displayName: deployment group create
+                  inputs:
+                    azureSubscription: $(serviceConnection)
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      az deployment group create -g $(resourceGroup) \
+                        -n cdi-$(Build.BuildId) --parameters $(paramFile) -o none

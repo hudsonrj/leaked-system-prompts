@@ -1,0 +1,36 @@
+{
+  "name": "idx-codigo",
+  "fields": [
+    { "name": "chunk_id", "type": "Edm.String", "key": true, "filterable": true },
+    { "name": "fonte", "type": "Edm.String", "filterable": true, "facetable": true },
+    { "name": "repositorio", "type": "Edm.String", "filterable": true },
+    { "name": "caminho", "type": "Edm.String", "searchable": true, "filterable": true },
+    { "name": "linha_ini", "type": "Edm.Int32", "filterable": true },
+    { "name": "linha_fim", "type": "Edm.Int32", "filterable": true },
+    { "name": "versao", "type": "Edm.String", "filterable": true },
+    { "name": "linguagem", "type": "Edm.String", "filterable": true, "facetable": true },
+    { "name": "interface_id", "type": "Edm.String", "filterable": true, "facetable": true },
+    { "name": "iflow", "type": "Edm.String", "filterable": true, "searchable": true },
+    { "name": "simbolo", "type": "Edm.String", "searchable": true, "filterable": true, "analyzer": "keyword" },
+    { "name": "assinatura", "type": "Edm.String", "searchable": true, "analyzer": "standard.lucene" },
+    { "name": "codigo", "type": "Edm.String", "searchable": true, "analyzer": "standard.lucene" },
+    { "name": "resumo", "type": "Edm.String", "searchable": true, "analyzer": "pt-Br.microsoft" },
+    { "name": "grupos", "type": "Collection(Edm.String)", "filterable": true, "retrievable": false },
+    { "name": "vetor_codigo", "type": "Collection(Edm.Single)", "searchable": true, "retrievable": false, "dimensions": 3072, "vectorSearchProfile": "vp-hnsw" },
+    { "name": "vetor_resumo", "type": "Collection(Edm.Single)", "searchable": true, "retrievable": false, "dimensions": 3072, "vectorSearchProfile": "vp-hnsw" }
+  ],
+  "scoringProfiles": [
+    { "name": "simbolo-assinatura", "text": { "weights": { "simbolo": 5, "assinatura": 3, "codigo": 1, "resumo": 1 } } }
+  ],
+  "defaultScoringProfile": "simbolo-assinatura",
+  "semantic": {
+    "defaultConfiguration": "sem-codigo",
+    "configurations": [
+      { "name": "sem-codigo", "prioritizedFields": { "titleField": { "fieldName": "simbolo" }, "prioritizedContentFields": [ { "fieldName": "resumo" }, { "fieldName": "assinatura" } ], "prioritizedKeywordsFields": [ { "fieldName": "caminho" } ] } }
+    ]
+  },
+  "vectorSearch": {
+    "algorithms": [ { "name": "hnsw", "kind": "hnsw", "hnswParameters": { "metric": "cosine", "m": 4, "efConstruction": 400, "efSearch": 500 } } ],
+    "profiles": [ { "name": "vp-hnsw", "algorithm": "hnsw" } ]
+  }
+}

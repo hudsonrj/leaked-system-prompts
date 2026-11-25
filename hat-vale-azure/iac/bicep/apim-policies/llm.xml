@@ -1,0 +1,35 @@
+<!--
+  Gateway LLM — controle de consumo
+  - Valida token Entra ID
+  - Cota de tokens por agente + demanda (x-demanda)
+  - Emite métricas de tokens para o Control Board (dimensões: agente, demanda)
+  O backend (app-integia-gateway) mascara dados sensíveis e chama o deployment
+  no Foundry com a managed identity id-cdi-gw.
+-->
+<policies>
+  <inbound>
+    <base />
+    <validate-azure-ad-token tenant-id="{{tenant-id}}" header-name="Authorization" failed-validation-httpcode="401" output-token-variable-name="jwt">
+      <audiences>
+        <audience>{{api-audience}}</audience>
+      </audiences>
+    </validate-azure-ad-token>
+    <check-header name="x-demanda" failed-check-httpcode="400" failed-check-error-message="Cabeçalho x-demanda obrigatório" ignore-case="true" />
+    <set-variable name="agentId" value="@(((Jwt)context.Variables["jwt"]).Claims.GetValueOrDefault("azp", ((Jwt)context.Variables["jwt"]).Claims.GetValueOrDefault("appid", "desconhecido")))" />
+    <llm-token-limit counter-key="@((string)context.Variables["agentId"] + "|" + context.Request.Headers.GetValueOrDefault("x-demanda",""))" tokens-per-minute="60000" estimate-prompt-tokens="false" remaining-tokens-variable-name="remainingTokens" />
+    <llm-emit-token-metric namespace="cdi-llm">
+      <dimension name="agente" value="@((string)context.Variables["agentId"])" />
+      <dimension name="demanda" value="@(context.Request.Headers.GetValueOrDefault("x-demanda",""))" />
+      <dimension name="API ID" />
+    </llm-emit-token-metric>
+  </inbound>
+  <backend>
+    <base />
+  </backend>
+  <outbound>
+    <base />
+  </outbound>
+  <on-error>
+    <base />
+  </on-error>
+</policies>
